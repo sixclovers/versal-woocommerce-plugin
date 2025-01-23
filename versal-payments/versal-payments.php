@@ -4,7 +4,7 @@
  * Plugin Name:          Versal Payments
  * Plugin URI:           https://github.com/sixclovers/versal-woocommerce-plugin/
  * Description:          Accept cryptocurrency payments with Versal Payments.
- * Version:              1.1.0
+ * Version:              1.1.1
  * Requires at least:    4.0
  * Requires PHP:         5.3
  * Author:               Six Clovers, Inc.
@@ -82,7 +82,7 @@ if( !class_exists( 'WC_Versal_Payments' ) ) {
      * @access public
      * @var    string
      */
-    public $version = '1.1.0';
+    public $version = '1.1.1';
 
     /**
      * The Gateway URL.
