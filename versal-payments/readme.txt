@@ -3,9 +3,9 @@ Contributors: versalmoney
 Plugin URL: https://www.versal.money/
 Tags: woocommerce, payments, crypto, ethereum, bitcoin
 Requires at least: 4.0
-Requires PHP: 5.3
-Tested up to: 6.7.1
-Stable tag: 1.1.2
+Requires PHP: 7.0
+Tested up to: 6.7
+Stable tag: 1.1.3
 License: GPLv3 or later
 Accept cryptocurrencies through Versal Payments.
 
@@ -94,7 +94,18 @@ To use this plugin with your WooCommerce store you will need:
 
 * WooCommerce plugin
 
+== External services ==
+
+This plugin connects to an API to securely create a payment session. The payment session is used to redirect the user to the payment wall experience.
+
+It sends the checkout amount, checkout currency, and redirection URLs every time the user clicks on the Pay button.
+
+This service is provided by "Six Clovers, Inc.": [Terms of Service], [Privacy Policy], [DPA].
+
 == Changelog ==
+
+= 1.1.3 =
+* Added improvements based on publishing the plugin to WordPress.
 
 = 1.1.2 =
 * Added improvements based on Plugin Check.
@@ -107,3 +118,6 @@ To use this plugin with your WooCommerce store you will need:
 
 [Versal Payments Production Dashboard]: <https://dashboard.versal.money/>
 [Versal Payments Sandbox Dashboard]: <https://sandbox.versal.money/>
+[Terms of Service]: <https://dashboard.versal.money/terms/>
+[Privacy Policy]: <https://dashboard.versal.money/privacy/>
+[DPA]: <https://dashboard.versal.money/dpa/>
