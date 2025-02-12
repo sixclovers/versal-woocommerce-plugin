@@ -1,10 +1,10 @@
 <?php
 
-  namespace Versal\API;
+  namespace VersalPayments\API;
 
-  class VersalAPI {
+  class VersalPaymentsAPI {
     private $api_endpoint;
-    private $log;
+    private $logger;
     private $private_key;
     private $public_key;
 
@@ -70,4 +70,5 @@
       return $response['status'];
     }
   }
+
 ?>

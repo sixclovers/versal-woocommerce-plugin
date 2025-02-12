@@ -5,17 +5,17 @@ if( !defined( 'ABSPATH' ) ) exit; // Exit if accessed directly.
 /**
  * WooCommerce Versal Payments.
  *
- * @class   WC_Gateway_Versal_Payments
+ * @class   VersalPaymentsGateway
  * @extends WC_Payment_Gateway
  * @version 1.0.0
  * @author  Six Clovers
  */
 
-include_once plugin_dir_path( __FILE__ ) . 'class-versal-api.php';
+include_once plugin_dir_path( __FILE__ ) . 'class-versal-payments-api.php';
 
-use Versal\API\VersalAPI;
+use VersalPayments\API\VersalPaymentsAPI;
 
-class WC_Gateway_Versal_Payments extends WC_Payment_Gateway {
+class VersalPaymentsGateway extends WC_Payment_Gateway {
 
   private $logger;
   private $versal_api;
@@ -38,13 +38,13 @@ class WC_Gateway_Versal_Payments extends WC_Payment_Gateway {
     $this->order_button_text   = __( 'Pay with Versal Payments', 'versal-payments' );
     $this->method_title        = __( 'Versal Payments', 'versal-payments' );
     $this->method_description  = __( 'Accept cryptocurrency payments with Versal Payments.', 'versal-payments' );
-    $this->notify_url          = WC()->api_request_url( 'WC_Gateway_Versal_Payments' );
+    $this->notify_url          = WC()->api_request_url( 'VersalPaymentsGateway' );
     $this->supports            = array( 'products' );
 		$this->timeout             = ( new WC_DateTime() )->sub( new DateInterval( 'P3D' ) );
 
     $this->enabled             = $this->get_option( 'enabled' );
     $this->title               = !$this->empty($this->get_option( 'title' )) ? $this->get_option( 'title' ) : __( 'Versal Payments', 'versal-payments' );
-    $this->description         = !$this->empty($this->get_option( 'description' )) ? $this->get_option( 'description' ) : __( 'Clicking "Proceed to Versal" will redirect you to Versal to complete your purchase.', 'versal-payments' );
+    $this->description         = !$this->empty($this->get_option( 'description' )) ? $this->get_option( 'description' ) : __( 'Clicking \'Proceed to Versal\' will redirect you to Versal to complete your purchase.', 'versal-payments' );
     $this->next_button         = !$this->empty($this->get_option( 'next_button' )) ? $this->get_option( 'next_button' ) : __( 'Proceed to Versal', 'versal-payments' );
     $this->develop             = 'no';
     $this->sandbox             = $this->get_option( 'sandbox' );
@@ -61,13 +61,17 @@ class WC_Gateway_Versal_Payments extends WC_Payment_Gateway {
       }
     }
 
-    $this->versal_api = new VersalAPI($this->logger, $this->api_endpoint, $this->public_key, $this->private_key);
-    $this->init_form_fields();
-    $this->init_settings();
+    $this->versal_api = new VersalPaymentsAPI($this->logger, $this->api_endpoint, $this->public_key, $this->private_key);
 
     if( is_admin() ) {
       add_action( 'admin_notices', array( $this, 'checks' ) );
-      add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+
+      if (isset($_SERVER['REQUEST_URI']) && strpos( esc_url_raw(wp_unslash($_SERVER['REQUEST_URI'])) , $this->id ) !== false) {
+        $this->init_form_fields();
+        $this->init_settings();
+
+        add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+      }
     }
 
     add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
@@ -139,22 +143,19 @@ class WC_Gateway_Versal_Payments extends WC_Payment_Gateway {
           <?php esc_html_e( 'Dashboard', 'versal-payments' ); ?>
         </th>
         <td class="forminp">
-          <a href="<?php echo esc_url_raw($this->productionDashboard) ?>" target="_blank" class="button button-primary"><?php esc_html_e( 'Production Dashboard', 'versal-payments' ); ?></a>
-          <a href="<?php echo esc_url_raw($this->sandboxServer) ?>" target="_blank" class="button"><?php esc_html_e( 'Sandbox Dashboard', 'versal-payments' ); ?></a>
+          <a href="<?php echo esc_url($this->productionDashboard) ?>" target="_blank" class="button button-primary"><?php esc_html_e( 'Production Dashboard', 'versal-payments' ); ?></a>
+          <a href="<?php echo esc_url($this->sandboxServer) ?>" target="_blank" class="button"><?php esc_html_e( 'Sandbox Dashboard', 'versal-payments' ); ?></a>
         </td>
       </tr>
     
       <?php $this->generate_settings_html(); ?>
     </table>
-
-    <script>
-      window.develop = '<?php echo esc_url_raw($this->develop); ?>';
-      window.developServer = '<?php echo esc_url_raw($this->developServer); ?>';
-      window.productionServer = '<?php echo esc_url_raw($this->productionServer); ?>';
-      window.sandboxServer = '<?php echo esc_url_raw($this->sandboxServer); ?>';
-    </script>
     <?php
-    wp_enqueue_script('versal-admin-js', plugin_dir_url(__FILE__) . '../assets/js/admin.js', array('jquery'), WC_Versal_Payments::get_instance()->version, true);
+    wp_enqueue_script('versal-payments-admin', plugin_dir_url(__FILE__) . '../assets/js/admin.js', array('jquery'), VersalPayments::get_instance()->version, true);
+    wp_add_inline_script('versal-payments-admin', 'window.develop = "' . esc_js($this->develop) . '";', 'before');
+    wp_add_inline_script('versal-payments-admin', 'window.developServer = "' . esc_url($this->developServer) . '";', 'before');
+    wp_add_inline_script('versal-payments-admin', 'window.productionServer = "' . esc_url($this->productionServer) . '";', 'before');
+    wp_add_inline_script('versal-payments-admin', 'window.sandboxServer = "' . esc_url($this->sandboxServer) . '";', 'before');
   }
 
   /**
@@ -168,10 +169,10 @@ class WC_Gateway_Versal_Payments extends WC_Payment_Gateway {
     }
 
     // PHP Version.
-    if( version_compare( phpversion(), '5.3', '<' ) ) {
+    if( version_compare( phpversion(), '7.0', '<' ) ) {
       ?><div class="error"><p><?php
       /* translators: 1: phpversion */
-      echo esc_html( sprintf( __( 'Versal Payments Error: Versal Payments requires PHP 5.3 and above. You are using version %s.', 'versal-payments' ), phpversion() ) );
+      echo esc_html( sprintf( __( 'Versal Payments Error: Versal Payments requires PHP 7.0 and above. You are using version %s.', 'versal-payments' ), phpversion() ) );
       ?></p></div><?php
     }
 
@@ -217,7 +218,7 @@ class WC_Gateway_Versal_Payments extends WC_Payment_Gateway {
         'title'       => __( 'Description', 'versal-payments' ),
         'type'        => 'text',
         'description' => __( 'This controls the description which the user sees during checkout.', 'versal-payments' ),
-        'default'     => 'Clicking "Proceed to Versal" will redirect you to Versal to complete your purchase.', 'versal-payments',
+        'default'     => 'Clicking \'Proceed to Versal\' will redirect you to Versal to complete your purchase.', 'versal-payments',
         'desc_tip'    => true
       ),
       'next_button' => array(
@@ -278,17 +279,13 @@ class WC_Gateway_Versal_Payments extends WC_Payment_Gateway {
       return;
     }
 
-    ?>
-    <script>
-      window.gatewayId = '<?php echo esc_html($this->id) ?>';
-      window.methodTitle = '<?php echo esc_html($this->method_title) ?>';
-      window.methodDescription = '<?php echo esc_html($this->method_description) ?>';
-      window.paymentTitle = '<?php echo esc_html($this->title) ?>';
-      window.paymentDescription = '<?php echo esc_html($this->description) ?>';
-      window.paymentNextButton = '<?php echo esc_html($this->next_button) ?>';
-    </script>
-    <?php
-    wp_enqueue_script('versal-js', plugin_dir_url(__FILE__) . '../assets/js/checkout.js', array('jquery'), WC_Versal_Payments::get_instance()->version, true);
+    wp_enqueue_script('versal-payments', plugin_dir_url(__FILE__) . '../assets/js/checkout.js', array('jquery'), VersalPayments::get_instance()->version, true);
+    wp_add_inline_script('versal-payments', 'window.gatewayId = "' . esc_js($this->id) . '";', 'before');
+    wp_add_inline_script('versal-payments', 'window.methodTitle = "' . esc_js($this->method_title) . '";', 'before');
+    wp_add_inline_script('versal-payments', 'window.methodDescription = "' . esc_js($this->method_description) . '";', 'before');
+    wp_add_inline_script('versal-payments', 'window.paymentTitle = "' . esc_js($this->title) . '";', 'before');
+    wp_add_inline_script('versal-payments', 'window.paymentDescription = "' . esc_js($this->description) . '";', 'before');
+    wp_add_inline_script('versal-payments', 'window.paymentNextButton = "' . esc_js($this->next_button) . '";', 'before');
   }
 
   /**
